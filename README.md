@@ -1,5 +1,5 @@
 # KreshEdit
-ver. 1.0.0
+ver. 1.1.0
 
 KreshEdit is a modular, private save editor for visual novels, interactive novels, and other small games.
 It runs entirely in your browser - no installs, no servers, no data ever leaves your machine.
@@ -15,11 +15,13 @@ Disclaimer: This project was built using AI but implemented by yours truly. Do w
 | Ren'Py | Pickle (raw + gzip) via Pyodide |
 | Unity JSON | Plain JSON, Base64 JSON |
 | Unreal JSON | Plain JSON |
+| LZString | compressToBase64, compressToEncodedURIComponent |
+| Gzip JSON | Raw gzip-compressed JSON |
 | Generic JSON | Plain JSON, Base64 JSON |
 
 > **Note:** Binary formats (Unreal GVAS, Unity binary serialization, RAGS) are not supported.
 
-> **Note:** Ren'Py support is experimental. Saves composed of standard dicts, lists, and primitives round-trip cleanly. Custom Python classes are represented as annotated JSON and restored as plain dicts - exact fidelity is not guaranteed for all games.
+> **Note:** Ren'Py support is experimental. Saves composed of standard dicts, lists, and primitives round-trip cleanly. Custom Python classes are represented as annotated JSON and restored as plain dicts — exact fidelity is not guaranteed for all games.
 
 ## Usage
 
@@ -37,8 +39,10 @@ Disclaimer: This project was built using AI but implemented by yours truly. Do w
 Everything runs locally. No data is uploaded anywhere. The only network requests made are:
 
 - Google Fonts (UI fonts, cosmetic only)
-- pako from cdnjs (zlib compression, loaded on demand for SugarCube / RPGMaker saves)
+- pako from cdnjs (zlib compression, loaded once on demand for SugarCube / RPGMaker saves)
 - Pyodide from jsDelivr (WebAssembly Python, loaded on demand for Ren'Py saves only)
+
+LZString and gzip formats use no external dependencies — they are handled entirely by bundled code and browser-native APIs.
 
 If you need fully offline operation, the tool works without fonts and pako. Ren'Py support requires a network connection on first use to download Pyodide (~50 MB), after which it is cached by the browser.
 
@@ -52,7 +56,7 @@ python3 -m http.server
 
 Then open `http://localhost:8000` in your browser.
 
-> **Note:** Some browsers block ES module imports from `file://` directly (Chrome requires `--allow-file-access-from-files`). Using a local server avoids this entirely.
+> **Note:** Using a local server is recommended. Some browsers restrict CDN requests or file access when opening `index.html` directly via `file://`.
 
 ## Project Structure
 
@@ -62,13 +66,15 @@ KreshEdit/
 ├── main.js
 ├── style.css
 └── modules/
-    ├── _utils.js
-    ├── module_template.js
+    ├── _utils.js          — shared helpers + pako loader (window.KreshUtils, window.KreshPako)
+    ├── module_template.js — copy this to add a new format
     ├── sugarcube.js
     ├── rpgmaker_mv.js
+    ├── gzip_json.js
     ├── renpy.js
     ├── unity_json.js
     ├── unreal_json.js
+    ├── lzstring.js
     └── html.js
 ```
 
@@ -77,14 +83,19 @@ KreshEdit/
 Copy `modules/module_template.js`, rename it, and implement three functions:
 
 ```js
-export function detect(buffer) → boolean
-export function decode(buffer) → { text: string, metadata: object }
-export function encode(text, metadata) → Uint8Array
+function detect(buffer)              // → boolean         (sync, must not throw)
+function decode(buffer)              // → { text, metadata }  (may be async, may throw)
+function encode(text, metadata)      // → Uint8Array          (may be async, may throw)
 ```
 
-Then add your module's name to the `MODULE_NAMES` array in `main.js`. Modules are tried in order - put more specific formats before broad ones.
+Then:
 
-See `module_template.js` for the full API contract and guidelines.
+1. Add a `<script>` tag for your file in `index.html` (before `main.js`).
+2. Add the module name to `MODULE_NAMES` in `main.js`. Order matters — more specific formats before broader ones.
+
+**How the chain works:** `detect()` is called on every file import. If it returns `true`, `decode()` is called. If `decode()` throws, the error is logged and the next matching module is tried automatically — so it is safe to throw from `decode()` when the file turns out not to match on closer inspection.
+
+**Shared utilities** are available via `window.KreshUtils` (TextEncoder/Decoder, base64 helpers) and `window.KreshPako` (shared pako promise — `const pako = await window.KreshPako`). See `_utils.js` and `module_template.js` for full details.
 
 ## Contact
 

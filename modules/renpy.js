@@ -1,34 +1,35 @@
 /**
- * KreshEdit — modules/renpy.js
+ * KreshEdit - modules/renpy.js
  * Handles Ren'Py save files via Pyodide (Python pickle + optional gzip).
  *
  * Ren'Py save files are Python pickle streams. Many games store simple
- * dict/list/primitive structures, which round‑trip cleanly. Some games store
+ * dict/list/primitive structures, which roundtrip cleanly. Some games store
  * custom Python classes; these are represented as annotated JSON objects and
  * reconstructed as plain dicts on encode.
  *
  * Supported:
- *   - Raw pickle (protocol 0–5)
- *   - Gzip‑compressed pickle (common in Ren'Py)
+ *   - Raw pickle (protocol 0-5)
+ *   - Gzipcompressed pickle (common in Ren'Py)
  *   - Arbitrary nested dict/list/primitive structures
- *   - Bytes objects (base64‑encoded in JSON)
+ *   - Bytes objects (base64encoded in JSON)
  *
  * Limitations:
  *   - Custom Python classes are serialized as {"__type__": "..."} with their
  *     __dict__ captured when possible. They are restored as plain dicts.
- *   - Exact round‑trip fidelity is guaranteed only for saves composed of
+ *   - Exact roundtrip fidelity is guaranteed only for saves composed of
  *     dicts, lists, primitives, and bytes.
  *
  * This module is stable and safe for typical Ren'Py saves. It does not attempt
  * to support binary .rpyc/.rpa formats or Ren'Py's internal AST structures.
  */
 
-import { base64ToBytes } from './_utils.js';
+(function () {
+const { base64ToBytes } = window.KreshUtils;
 
 const GZIP_MAGIC_0 = 0x1f;
 const GZIP_MAGIC_1 = 0x8b;
 
-// ── Pyodide loader ────────────────────────────────────────────────────────────
+// ---- Pyodide loader ----------------------------------------------------------------
 let _pyodide = null;
 let _pyodideLoading = null;
 
@@ -37,21 +38,26 @@ async function getPyodide() {
   if (_pyodideLoading) return _pyodideLoading;
 
   _pyodideLoading = (async () => {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-    _pyodide = await window.loadPyodide();
-    return _pyodide;
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      _pyodide = await window.loadPyodide();
+      return _pyodide;
+    } catch (err) {
+      _pyodideLoading = null; // allow retry on next import attempt
+      throw err;
+    }
   })();
 
   return _pyodideLoading;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ---- Helpers -----------------------------------------------------------------------
 function getBytes(buffer) {
   return buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 }
@@ -59,7 +65,7 @@ function getBytes(buffer) {
 function looksLikePickle(bytes) {
   if (bytes.length < 2) return false;
 
-  // Raw pickle protocol 2–5
+  // Raw pickle protocol 25
   if (bytes[0] === 0x80 && bytes[1] >= 0x02 && bytes[1] <= 0x05) return true;
 
   // Gzip-compressed pickle
@@ -71,8 +77,8 @@ function looksLikePickle(bytes) {
   return false;
 }
 
-// ── detect ────────────────────────────────────────────────────────────────────
-export function detect(buffer) {
+// ---- detect ----------------------------------------------------------------------
+function detect(buffer) {
   try {
     return looksLikePickle(getBytes(buffer));
   } catch {
@@ -80,13 +86,13 @@ export function detect(buffer) {
   }
 }
 
-// ── decode ────────────────────────────────────────────────────────────────────
+// ---- decode ----------------------------------------------------------------------
 // NOTE on "__data__":
 //   - "__data__" is preserved as a plain dict.
 //   - On encode, it remains a dict because custom classes cannot be
 //     reconstructed. This is intentional and documented.
 
-export async function decode(buffer) {
+async function decode(buffer) {
   const pyodide = await getPyodide();
   const bytes = getBytes(buffer);
 
@@ -141,14 +147,14 @@ json.dumps({"compressed": compressed, "data": _to_serializable(obj)})
   };
 }
 
-// ── encode ────────────────────────────────────────────────────────────────────
+// --- encode ----------------------------------------------------------------------
 // NOTE on "__type__" filtering:
 //   - "__type__" is intentionally removed during encode because we cannot
 //     reconstruct custom Python classes without the game's code.
 //   - If a user save contains a literal "__type__" key, it will be dropped.
-//     This is an acceptable trade‑off for Ren'Py compatibility.
+//     This is an acceptable tradeoff for Ren'Py compatibility.
 
-export async function encode(text, metadata) {
+async function encode(text, metadata) {
   const pyodide = await getPyodide();
   const obj = JSON.parse(text);
 
@@ -184,3 +190,7 @@ base64.b64encode(pickled).decode()
 
   return base64ToBytes(b64);
 }
+
+window.KreshModules = window.KreshModules || {};
+window.KreshModules.renpy = { detect, decode, encode };
+})();

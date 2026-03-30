@@ -1,5 +1,5 @@
 /**
- * KreshEdit — modules/unity_json.js
+ * KreshEdit - modules/unity_json.js
  * Handles Unity games that persist save data as JSON or base64-encoded JSON.
  *
  * Common patterns:
@@ -12,14 +12,15 @@
  * OR plain base64 that decodes to such JSON.
  */
 
-import {
+(function () {
+const {
   ENC,
   DEC,
   bufToString,
   base64ToBytes,
   bytesToBase64,
   isLikelyBase64
-} from './_utils.js';
+} = window.KreshUtils;
 
 function tryBase64ToJson(str) {
   try {
@@ -35,19 +36,14 @@ function tryParseJson(str) {
 }
 
 const UNITY_KEY_PATTERNS = [
-  /^m_[A-Z]/,           // Unity serialized field prefix
+  /^m_[A-Z]/,      // Unity serializer field prefix — highly specific
   /saveData/i,
   /playerData/i,
   /gameData/i,
   /saveFile/i,
-  /version/i,
   /levelData/i,
   /inventory/i,
-  /health/i,
-  /score/i,
   /achievements/i,
-  /settings/i,
-  /profile/i,
 ];
 
 function looksLikeUnity(obj) {
@@ -59,8 +55,8 @@ function looksLikeUnity(obj) {
   return keys.some(k => UNITY_KEY_PATTERNS.some(p => p.test(k)));
 }
 
-// ── detect ─────────────────────────────────────────────────────────────────────
-export function detect(buffer) {
+// ---- detect -----------------------------------------------------------------------------
+function detect(buffer) {
   try {
     const str = bufToString(buffer).trim();
     if (!str) return false;
@@ -69,7 +65,7 @@ export function detect(buffer) {
     const plain = tryParseJson(str);
     if (plain !== null && looksLikeUnity(plain)) return true;
 
-    // Base64 → JSON with Unity-like keys?
+    // Base64 - JSON with Unity-like keys?
     if (isLikelyBase64(str)) {
       const b64obj = tryBase64ToJson(str);
       if (b64obj !== null && looksLikeUnity(b64obj)) return true;
@@ -81,8 +77,8 @@ export function detect(buffer) {
   }
 }
 
-// ── decode ─────────────────────────────────────────────────────────────────────
-export function decode(buffer) {
+// ---- decode --------------------------------------------------------------------------------
+function decode(buffer) {
   const str = bufToString(buffer).trim();
 
   const plain = tryParseJson(str);
@@ -106,16 +102,20 @@ export function decode(buffer) {
   throw new Error('unity_json: could not decode buffer');
 }
 
-// ── encode ─────────────────────────────────────────────────────────────────────
-export function encode(text, metadata) {
+// ---- encode ------------------------------------------------------------------------
+function encode(text, metadata) {
   const obj = JSON.parse(text);
   const str = JSON.stringify(obj);
 
   if (metadata && metadata.encoding === 'base64') {
-  const bytes = ENC.encode(str);
-  const b64 = bytesToBase64(bytes);
-  return ENC.encode(b64);
+    const bytes = ENC.encode(str);
+    const b64 = bytesToBase64(bytes);
+    return ENC.encode(b64);
   }
 
   return ENC.encode(str);
 }
+
+window.KreshModules = window.KreshModules || {};
+window.KreshModules.unity_json = { detect, decode, encode };
+})();

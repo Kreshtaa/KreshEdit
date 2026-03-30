@@ -1,5 +1,5 @@
 /**
- * KreshEdit — modules/rpgmaker_mv.js
+ * KreshEdit  modules/rpgmaker_mv.js
  * Handles RPGMaker MV and MZ save files.
  *
  * Format: base64-encoded zlib-deflated JSON string.
@@ -9,32 +9,18 @@
  * Relies on pako (loaded from CDN) for zlib inflate/deflate.
  */
 
-import {
+(function () {
+const {
   ENC,
   DEC,
   bufToString,
   base64ToBytes,
   bytesToBase64,
   isLikelyBase64
-} from './_utils.js';
+} = window.KreshUtils;
 
-// ── Pako loader ───────────────────────────────────────────────────────────────
-let _pako = null;
 
-async function getPako() {
-  if (_pako) return _pako;
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
-    s.onload  = resolve;
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-  _pako = window.pako;
-  return _pako;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ---- Helpers -----------------------------------------------------------------------
 
 function isZlibMagic(bytes) {
   if (bytes.length < 2) return false;
@@ -44,8 +30,8 @@ function isZlibMagic(bytes) {
   );
 }
 
-// ── detect ─────────────────────────────────────────────────────────────────────
-export function detect(buffer) {
+// ---- detect ------------------------------------------------------------------------
+function detect(buffer) {
   try {
     const str = bufToString(buffer).trim();
     if (!str || !isLikelyBase64(str)) return false;
@@ -62,9 +48,9 @@ export function detect(buffer) {
   }
 }
 
-// ── decode ─────────────────────────────────────────────────────────────────────
-export async function decode(buffer) {
-  const pako = await getPako();
+// ---- decode ------------------------------------------------------------------------
+async function decode(buffer) {
+  const pako = await window.KreshPako;
   const str  = bufToString(buffer).trim();
 
   if (!isLikelyBase64(str)) throw new Error('rpgmaker_mv: not base64');
@@ -83,9 +69,9 @@ export async function decode(buffer) {
   };
 }
 
-// ── encode ─────────────────────────────────────────────────────────────────────
-export async function encode(text, metadata) {
-  const pako = await getPako();
+// ---- encode -----------------------------------------------------------------------
+async function encode(text, metadata) {
+  const pako = await window.KreshPako;
   const obj  = JSON.parse(text);
   const json = JSON.stringify(obj);
 
@@ -95,3 +81,7 @@ export async function encode(text, metadata) {
 
   return ENC.encode(b64);
 }
+
+window.KreshModules = window.KreshModules || {};
+window.KreshModules.rpgmaker_mv = { detect, decode, encode };
+})();

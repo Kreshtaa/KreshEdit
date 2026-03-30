@@ -1,5 +1,5 @@
 /**
- * KreshEdit — modules/sugarcube.js
+ * KreshEdit - modules/sugarcube.js
  * Handles Twine/SugarCube .save files.
  *
  * SugarCube saves appear in three forms:
@@ -14,33 +14,18 @@
  * once and cache the result.
  */
 
-import {
+(function () {
+const {
   ENC,
   DEC,
   bufToString,
   base64ToBytes,
   bytesToBase64,
   isLikelyBase64
-} from './_utils.js';
+} = window.KreshUtils;
 
-// ── Pako loader ──────────────────────────────────────────────────────────────
-let _pako = null;
 
-async function getPako() {
-  if (_pako) return _pako;
-  // Dynamic script-tag injection so it works under file:// and HTTPS equally.
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
-    s.onload  = resolve;
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-  _pako = window.pako;
-  return _pako;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ---- Helpers ---------------------------------------------------------------------------
 
 function looksLikeSugarCube(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
@@ -54,11 +39,10 @@ function looksLikeSugarCube(obj) {
   return false;
 }
 
-// ── detect ────────────────────────────────────────────────────────────────────
-export function detect(buffer) {
+// ---- detect ------------------------------------------------------------------------
+function detect(buffer) {
   try {
     const str = bufToString(buffer).trim();
-    if (!str) return false;
 
     // 1. Plain JSON
     try {
@@ -66,7 +50,7 @@ export function detect(buffer) {
       if (looksLikeSugarCube(obj)) return true;
     } catch (_) {}
 
-    // 2. Base64 → JSON
+    // 2. Base64 - JSON
     if (isLikelyBase64(str)) {
       try {
         const obj = JSON.parse(DEC.decode(base64ToBytes(str)));
@@ -74,7 +58,7 @@ export function detect(buffer) {
       } catch (_) {}
     }
 
-    // 3. Base64 → zlib → JSON — requires pako; skip in synchronous detect.
+    // 3. Base64 - zlib - JSON - requires pako; skip in synchronous detect.
     // We do a cheap heuristic: if the base64 bytes, when decoded, start with
     // zlib magic (0x78 0x9C | 0x78 0xDA | 0x78 0x01 | 0x78 0x5E), flag it.
     if (isLikelyBase64(str)) {
@@ -96,8 +80,8 @@ export function detect(buffer) {
   }
 }
 
-// ── decode ────────────────────────────────────────────────────────────────────
-export async function decode(buffer) {
+// ---- decode --------------------------------------------------------------------------------
+async function decode(buffer) {
   const str = bufToString(buffer).trim();
 
   // 1. Plain JSON
@@ -108,7 +92,7 @@ export async function decode(buffer) {
     }
   } catch (_) {}
 
-  // 2. Base64 → JSON
+  // 2. Base64 - JSON
   if (isLikelyBase64(str)) {
     try {
       const obj = JSON.parse(DEC.decode(base64ToBytes(str)));
@@ -118,23 +102,25 @@ export async function decode(buffer) {
     } catch (_) {}
   }
 
-  // 3. Base64 → zlib → JSON
+  // 3. Base64 - zlib - JSON
   if (isLikelyBase64(str)) {
-    const pako = await getPako();
+    const pako = await window.KreshPako;
     try {
       const compressed = base64ToBytes(str);
       const inflated   = pako.inflate(compressed);
       const json       = DEC.decode(inflated);
       const obj        = JSON.parse(json);
-      return { text: JSON.stringify(obj, null, 2), metadata: { encoding: 'base64+zlib' } };
+      if (looksLikeSugarCube(obj)) {
+        return { text: JSON.stringify(obj, null, 2), metadata: { encoding: 'base64+zlib' } };
+      }
     } catch (_) {}
   }
 
   throw new Error('sugarcube: could not decode buffer in any supported encoding');
 }
 
-// ── encode ────────────────────────────────────────────────────────────────────
-export async function encode(text, metadata) {
+// ---- encode -----------------------------------------------------------------------
+async function encode(text, metadata) {
   const obj = JSON.parse(text);
   const encoding = (metadata && metadata.encoding) || 'json';
 
@@ -149,11 +135,15 @@ export async function encode(text, metadata) {
   }
 
   if (encoding === 'base64+zlib') {
-    const pako = await getPako();
+    const pako = await window.KreshPako;
     const jsonBytes  = ENC.encode(JSON.stringify(obj));
     const compressed = pako.deflate(jsonBytes);
-    return compressed; // already a Uint8Array, no further wrapping needed
+    return ENC.encode(bytesToBase64(compressed));
   }
 
   throw new Error(`sugarcube: unknown encoding "${encoding}"`);
 }
+
+window.KreshModules = window.KreshModules || {};
+window.KreshModules.sugarcube = { detect, decode, encode };
+})();

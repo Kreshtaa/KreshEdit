@@ -1,11 +1,18 @@
 /**
- * KreshEdit — modules/html.js
+ * KreshEdit - modules/html.js
  * Handles plain JSON saves and base64-encoded JSON saves.
  * This is a broad fallback module placed last in the detection order.
  */
 
-import { ENC, DEC, bufToString, base64ToBytes, bytesToBase64, isLikelyBase64 } from './_utils.js';
-
+(function () {
+const {
+  ENC,
+  DEC,
+  bufToString,
+  base64ToBytes,
+  bytesToBase64,
+  isLikelyBase64
+} = window.KreshUtils;
 
 function tryBase64DecodeToJson(str) {
   try {
@@ -25,10 +32,10 @@ function tryParseJson(str) {
 }
 
 /**
- * detect(buffer) → boolean
+ * detect(buffer) - boolean
  * Returns true if the buffer is valid JSON or base64-encoded JSON.
  */
-export function detect(buffer) {
+function detect(buffer) {
   try {
     const str = bufToString(buffer).trim();
     if (!str) return false;
@@ -36,7 +43,7 @@ export function detect(buffer) {
     // Plain JSON?
     if (tryParseJson(str) !== null) return true;
 
-    // Base64 → JSON?
+    // Base64  JSON?
     if (isLikelyBase64(str) && tryBase64DecodeToJson(str) !== null) return true;
 
     return false;
@@ -46,9 +53,9 @@ export function detect(buffer) {
 }
 
 /**
- * decode(buffer) → { text, metadata }
+ * decode(buffer) - { text, metadata }
  */
-export function decode(buffer) {
+function decode(buffer) {
   const str = bufToString(buffer).trim();
 
   // Try plain JSON first
@@ -60,7 +67,7 @@ export function decode(buffer) {
     };
   }
 
-  // Try base64 → JSON
+  // Try base64 - JSON
   if (isLikelyBase64(str)) {
     const obj = tryBase64DecodeToJson(str);
     if (obj !== null) {
@@ -75,9 +82,9 @@ export function decode(buffer) {
 }
 
 /**
- * encode(text, metadata) → Uint8Array
+ * encode(text, metadata) - Uint8Array
  */
-export function encode(text, metadata) {
+function encode(text, metadata) {
   // Validate JSON
   const obj = JSON.parse(text);
   const str = JSON.stringify(obj);
@@ -90,3 +97,7 @@ export function encode(text, metadata) {
 
   return ENC.encode(str);
 }
+
+window.KreshModules = window.KreshModules || {};
+window.KreshModules.html = { detect, decode, encode };
+})();

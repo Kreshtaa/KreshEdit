@@ -1,9 +1,9 @@
 /**
- * KreshEdit — modules/unreal_json.js
+ * KreshEdit - modules/unreal_json.js
  * Handles Unreal Engine saves stored as JSON (NOT binary GVAS).
  *
  * Some Unreal games use USaveGame subclasses that serialize to plain JSON
- * rather than (or in addition to) the binary GVAS format — typically via
+ * rather than (or in addition to) the binary GVAS format  typically via
  * plugins like VaRest, JsonSaveSystem, or custom save managers.
  *
  * Detection heuristic: valid JSON that contains at least one Unreal-ish
@@ -14,16 +14,17 @@
  * detected by this module.
  */
 
-import {
+(function () {
+const {
   ENC,
   bufToString
-} from './_utils.js';
+} = window.KreshUtils;
 
 function tryParseJson(str) {
   try { return JSON.parse(str); } catch (_) { return null; }
 }
 
-// GVAS magic: "GVAS" at offset 0 → 0x47 0x56 0x41 0x53
+// GVAS magic: "GVAS" at offset 0 - 0x47 0x56 0x41 0x53
 function isGvas(buffer) {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   if (bytes.length < 4) return false;
@@ -59,8 +60,8 @@ function looksLikeUnreal(obj) {
   return keys.some(k => UNREAL_KEY_PATTERNS.some(p => p.test(k)));
 }
 
-// ── detect ─────────────────────────────────────────────────────────────────────
-export function detect(buffer) {
+// ---- detect -----------------------------------------------------------------------------
+function detect(buffer) {
   try {
     // Explicitly reject GVAS binary saves
     if (isGvas(buffer)) return false;
@@ -77,8 +78,8 @@ export function detect(buffer) {
   }
 }
 
-// ── decode ─────────────────────────────────────────────────────────────────────
-export function decode(buffer) {
+// ---- decode --------------------------------------------------------------------------------
+function decode(buffer) {
   if (isGvas(buffer)) {
     throw new Error('unreal_json: binary GVAS format is not supported');
   }
@@ -93,8 +94,12 @@ export function decode(buffer) {
   };
 }
 
-// ── encode ─────────────────────────────────────────────────────────────────────
-export function encode(text, metadata) {
+// ---- encode -----------------------------------------------------------------------
+function encode(text, metadata) {
   const obj = JSON.parse(text);
   return ENC.encode(JSON.stringify(obj));
 }
+
+window.KreshModules = window.KreshModules || {};
+window.KreshModules.unreal_json = { detect, decode, encode };
+})();

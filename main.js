@@ -3,14 +3,18 @@
  * Orchestrates file import, module detection, decode/encode, and export.
  */
 
+window.KreshModules = window.KreshModules || {};
+
 // ── Module manifest ──────────────────────────────────────────────────────────
 // Order matters: more specific formats first to reduce false-positive risks.
 const MODULE_NAMES = [
   'sugarcube',
   'rpgmaker_mv',
+  'gzip_json',
   'renpy',
   'unity_json',
   'unreal_json',
+  'lzstring',
   'html',
 ];
 
@@ -43,20 +47,6 @@ function setLoading(msg = 'Processing…') {
   statusMsg.appendChild(document.createTextNode(msg));
 }
 
-// ── Module loader ─────────────────────────────────────────────────────────────
-const moduleCache = {};
-
-async function loadModule(name) {
-  if (moduleCache[name]) return moduleCache[name];
-  const mod = await import(`./modules/${name}.js`);
-  moduleCache[name] = mod;
-  return mod;
-}
-
-async function loadAllModules() {
-  return Promise.all(MODULE_NAMES.map(loadModule));
-}
-
 // ── Import flow ───────────────────────────────────────────────────────────────
 btnImport.addEventListener('click', () => fileInput.click());
 
@@ -69,14 +59,12 @@ fileInput.addEventListener('change', async () => {
   editorFname.textContent = activeFilename;
   editorModule.textContent = '';
 
-  setLoading('Loading modules…');
+  // Modules are already loaded via <script> tags
+  const modules = MODULE_NAMES.map(name => window.KreshModules[name]);
 
-  let modules;
-  try {
-    modules = await loadAllModules();
-  } catch (err) {
-    setStatus('Failed to load editor modules. Check your connection or file permissions.', 'error');
-    console.error(err);
+  // Safety check
+  if (modules.some(m => !m)) {
+    setStatus('Some editor modules failed to load. Check index.html <script> tags.', 'error');
     return;
   }
 
@@ -89,54 +77,51 @@ fileInput.addEventListener('change', async () => {
     return;
   }
 
-  // ── Detect ──────────────────────────────────────────────────────────────────
+  // ── Detect + Decode ──────────────────────────────────────────────────────────
+  // Modules are tried in order. If detect() passes but decode() throws, we
+  // log the failure and continue to the next candidate rather than stopping.
+  // This handles cases where detection heuristics overlap (e.g. gzip magic
+  // matches both gzip_json and Ren'Py) and lets the correct module win.
+
   setLoading('Detecting format…');
 
-  let matched = null;
-  let matchedName = null;
+  let result        = null;
+  let matchedModule = null;
+  let matchedName   = null;
 
   for (let i = 0; i < modules.length; i++) {
-    const mod = modules[i];
+    const mod  = modules[i];
     const name = MODULE_NAMES[i];
+
+    let detected = false;
+    try { detected = mod.detect(buffer); } catch (_) {}
+    if (!detected) continue;
+
+    setLoading(`Decoding with ${name}…`);
     try {
-      if (mod.detect(buffer)) {
-        matched = mod;
-        matchedName = name;
+      const candidate = await mod.decode(buffer);
+      if (candidate && typeof candidate.text === 'string') {
+        result        = candidate;
+        matchedModule = mod;
+        matchedName   = name;
         break;
       }
-    } catch (_) {
-      // detect() must not throw; ignore if it does
+    } catch (err) {
+      console.warn(`[KreshEdit] ${name} detect passed but decode failed — trying next:`, err);
     }
   }
 
-  if (!matched) {
+  if (!result) {
     setStatus('This format is currently unsupported.', 'error');
-    activeModule = null;
+    activeModule   = null;
     activeMetadata = null;
-    editor.value = '';
+    editor.value   = '';
     editorModule.textContent = '';
-    editorFname.textContent = activeFilename;
+    editorFname.textContent  = activeFilename;
     return;
   }
 
-  // ── Decode ──────────────────────────────────────────────────────────────────
-  setLoading(`Decoding with ${matchedName}…`);
-
-  let result;
-  try {
-    result = await matched.decode(buffer);
-  } catch (err) {
-    setStatus('Failed to decode save file.', 'error');
-    console.error(err);
-    return;
-  }
-
-  if (!result || typeof result.text !== 'string') {
-    setStatus('Failed to decode save file.', 'error');
-    return;
-  }
-
-  activeModule   = matched;
+  activeModule   = matchedModule;
   activeMetadata = result.metadata ?? {};
 
   editor.value = result.text;
