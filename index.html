@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KreshEdit — Universal Save Editor</title>
+  <meta name="description" content="A modular, private universal save editor for visual/interactive novels and other small games. Supports SugarCube, Twine, Ren'Py, RPGMaker MV/MZ, Unity JSON." />
+  <meta property="og:title" content="KreshEdit — Universal Save Editor" />
+  <meta property="og:description" content="A modular, private universal save editor for visual/interactive novels and other small games. Supports SugarCube, Twine, Ren'Py, RPGMaker MV/MZ, Unity JSON." />
+  <meta property="og:type" content="website" />
+  <link rel="canonical" href="https://editor.kreshy.com/" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-bracket">[</span>
+      <span class="brand-name">KreshEdit</span>
+      <span class="brand-bracket">]</span>
+      <span class="brand-tag">universal save editor</span>
+    </div>
+    <div class="header-actions">
+      <button id="btn-import" class="btn btn-primary" title="Load a save file from your computer">
+        <span class="btn-icon">↑</span> Import Save
+      </button>
+      <button id="btn-export" class="btn btn-secondary" title="Download the edited save file">
+        <span class="btn-icon">↓</span> Export Save
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="editor-wrap">
+      <div class="editor-header">
+        <span id="editor-filename" class="editor-filename">no file loaded</span>
+        <span id="editor-module" class="editor-module"></span>
+      </div>
+      <textarea
+        id="editor"
+        class="editor"
+        spellcheck="false"
+        autocorrect="off"
+        autocapitalize="off"
+        placeholder="// Import a save file to begin editing.
+// Supported formats: SugarCube/Twine, Ren'Py, RPGMaker MV/MZ, Unity JSON, Unreal JSON, plain/base64 JSON.
+//
+// Back up your saves before editing!
+//
+// Your data never leaves this page — everything runs locally in your browser."
+      ></textarea>
+    </div>
+  </main>
+
+  <footer class="status-bar">
+    <div id="status-msg" class="status-msg status-idle">Ready.</div>
+    <div class="status-right">
+      <span class="status-hint">All processing is local &amp; private.</span>
+    </div>
+  </footer>
+
+  <input type="file" id="file-input" style="display:none" />
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+/* ── KreshEdit — style.css ────────────────────────────────────────────── */
+
+/* ── Variables ──────────────────────────────────────────────────────────── */
+:root {
+  --bg:         #0a0b0f;
+  --bg2:        #10121a;
+  --bg3:        #181b27;
+  --border:     #2a2e42;
+  --border-hi:  #3d4460;
+  --accent:     #7cffd4;
+  --accent2:    #ff6b9d;
+  --accent3:    #ffe066;
+  --text:       #cdd6f4;
+  --text-dim:   #585b70;
+  --text-mid:   #888baa;
+  --font-ui:    'Syne', sans-serif;
+  --font-code:  'Fira Code','JetBrains Mono', 'Cascadia Code', monospace;
+  --radius:     4px;
+  --header-h:   56px;
+  --footer-h:   36px;
+  --transition: 140ms ease;
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── Scanline overlay ────────────────────────────────────────────────────── */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.07) 2px,
+    rgba(0,0,0,0.07) 4px
+  );
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  gap: 12px;
+  z-index: 100;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.4;
+}
+
+.header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.brand-bracket {
+  font-family: var(--font-code);
+  font-size: 18px;
+  color: var(--accent);
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+
+.brand-tag {
+  font-family: var(--font-code);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: none;
+}
+
+@media (min-width: 540px) {
+  .brand-tag { display: inline; }
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0a0b0f;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover {
+  background: #a5ffe5;
+  border-color: #a5ffe5;
+  box-shadow: 0 0 18px rgba(124, 255, 212, 0.35);
+}
+
+.btn-primary:active {
+  background: #55d9b2;
+  border-color: #55d9b2;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-hi);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 0 0 14px rgba(255, 107, 157, 0.2);
+}
+
+.btn-secondary:active {
+  background: rgba(255,107,157,0.06);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Main / Editor area ────────────────────────────────────────────────────── */
+.main {
+  position: fixed;
+  top: var(--header-h);
+  bottom: var(--footer-h);
+  left: 0; right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.editor-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg2);
+  transition: border-color var(--transition);
+}
+
+.editor-wrap:focus-within {
+  border-color: var(--border-hi);
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.editor-filename {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.editor-module {
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(124, 255, 212, 0.08);
+  border: 1px solid rgba(124, 255, 212, 0.2);
+  border-radius: 3px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+  display: none;
+}
+
+.editor-module:not(:empty) {
+  display: inline-block;
+}
+
+.editor {
+  flex: 1;
+  width: 100%;
+  background: var(--bg2);
+  color: var(--text);
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.65;
+  padding: 14px 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  tab-size: 2;
+  overflow: auto;
+}
+
+.editor::placeholder {
+  color: var(--text-dim);
+  opacity: 1;
+}
+
+/* ── Status bar ─────────────────────────────────────────────────────────────── */
+.status-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--footer-h);
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 100;
+}
+
+.status-msg {
+  font-family: var(--font-code);
+  font-size: 12px;
+  transition: color 200ms;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-idle   { color: var(--text-dim); }
+.status-ok     { color: var(--accent); }
+.status-error  { color: var(--accent2); }
+.status-warn   { color: var(--accent3); }
+
+.status-right {
+  flex-shrink: 0;
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--text-dim);
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .status-right { display: block; }
+}
+
+/* ── Loading spinner ─────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(124, 255, 212, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
