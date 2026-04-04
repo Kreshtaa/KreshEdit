@@ -6,6 +6,8 @@ It runs entirely in your browser - no installs, no servers, no data ever leaves 
 
 Disclaimer: This project was built using AI but implemented by yours truly. Do with that as you will.
 
+> **Note for self-hosters:** The project files contain SEO metadata specific to the hosted version at editor.kreshy.com. If you plan on hosting KreshEdit yourself, you may want to remove or replace the `<meta>` tags, Open Graph properties, and JSON-LD block in `index.html`.
+
 ## Supported Formats
 
 | Format | Encodings |
