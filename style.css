@@ -104,8 +104,8 @@ html, body {
   display: none;
 }
 
-@media (min-width: 540px) {
-  .brand-tag { display: inline; }
+@media (max-width: 400px) {
+  .header-brand { display: none; }
 }
 
 .header-actions {
@@ -283,6 +283,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .status-idle   { color: var(--text-dim); }
@@ -291,15 +292,23 @@ html, body {
 .status-warn   { color: var(--accent3); }
 
 .status-right {
-  flex-shrink: 0;
   font-family: var(--font-code);
   font-size: 11px;
   color: var(--text-dim);
   display: none;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 @media (min-width: 600px) {
-  .status-right { display: block; }
+  .status-right { display: flex; }
+}
+
+/* ── GitHub link ─────────────────────────────────────────────────────────────── */
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 /* ── Loading spinner ─────────────────────────────────────────────────────────── */
