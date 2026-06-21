@@ -1,5 +1,5 @@
 # KreshEdit
-ver. 1.1.0
+ver. 1.1.1
 
 KreshEdit is a modular, private save editor for visual novels, interactive novels, and other small games.
 It runs entirely in your browser - no installs, no servers, no data ever leaves your machine.
@@ -19,11 +19,14 @@ Disclaimer: This project was built using AI but implemented by yours truly. Do w
 | Unreal JSON | Plain JSON |
 | LZString | compressToBase64, compressToEncodedURIComponent |
 | Gzip JSON | Raw gzip-compressed JSON |
+| QSP .sav | UTF-16 LE with additive cipher (CODREMOV=5) |
 | Generic JSON | Plain JSON, Base64 JSON |
 
 > **Note:** Binary formats (Unreal GVAS, Unity binary serialization, RAGS) are not supported.
 
 > **Note:** Ren'Py support is experimental. Saves composed of standard dicts, lists, and primitives round-trip cleanly. Custom Python classes are represented as annotated JSON and restored as plain dicts — exact fidelity is not guaranteed for all games.
+
+> **Note:** QSP .sav support is largely untested and reverse-engineered from a small sample of save files. It targets the Sonnix QSP engine build (format version 5.7.0). It may or may not work correctly for all QSP games or player builds. Always back up your saves before using this module.
 
 ## Usage
 
@@ -77,6 +80,7 @@ KreshEdit/
     ├── unity_json.js
     ├── unreal_json.js
     ├── lzstring.js
+    ├── qsp_sav.js
     └── html.js
 ```
 

@@ -53,7 +53,10 @@
       "twine save edit", "twine save editor",
       "twine save file edit", "twine save file editor",
       "renpy save edit", "renpy save editor",
-      "renpy save file edit", "renpy save file editor"
+      "renpy save file edit", "renpy save file editor",
+      "qsp save edit", "qsp save editor",
+      "qsp save file edit", "qsp save file editor",
+      "quest soft player save editor"
     ]
   }
   </script>
@@ -97,7 +100,7 @@
         autocorrect="off"
         autocapitalize="off"
         placeholder="// Import a save file to begin editing.
-// Supported formats: SugarCube/Twine, Ren'Py, RPGMaker MV/MZ, Unity JSON, Unreal JSON, plain/base64 JSON.
+// Supported formats: SugarCube/Twine, Ren'Py, RPGMaker MV/MZ, Unity JSON, Unreal JSON, QSP .sav, plain/base64 JSON.
 //
 // Back up your saves before editing!
 //
@@ -127,6 +130,7 @@
 
   <script src="./modules/_utils.js"></script>
 
+  <script src="./modules/qsp_sav.js"></script>
   <script src="./modules/sugarcube.js"></script>
   <script src="./modules/rpgmaker_mv.js"></script>
   <script src="./modules/gzip_json.js"></script>

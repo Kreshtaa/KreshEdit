@@ -8,6 +8,7 @@ window.KreshModules = window.KreshModules || {};
 // ── Module manifest ──────────────────────────────────────────────────────────
 // Order matters: more specific formats first to reduce false-positive risks.
 const MODULE_NAMES = [
+  'qsp_sav',
   'sugarcube',
   'rpgmaker_mv',
   'gzip_json',
